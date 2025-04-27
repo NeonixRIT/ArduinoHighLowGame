@@ -1,0 +1,2 @@
+- Pin variables can be modified at the top of `sketch.ino` for LED and Keypad pins
+- Game variables can be modified in the `setup` function in `sketch.ino`
