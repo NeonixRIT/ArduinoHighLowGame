@@ -26,7 +26,7 @@ char keys[ROWS][COLS] =
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
   {'7', '8', '9', 'C'},
-  {'*', '0', '#',  0 } // 'D' set to 0 to ignore input
+  {'*', '0', '#', 'D' }
 };
 
 byte rowPins[ROWS] = { 13, 12, 11, 10}; //row pins
@@ -224,6 +224,44 @@ class LEDBoard {
             this->updateLEDs();
         }
 
+        void blinkNumber(int number) {
+            int msDelay = 250;
+            // Get each digit
+            int firstDigit = number / 10;
+            int secondDigit = number % 10;
+            // Save the LED State and turn them all off
+            this->saveState();
+            this->setAll(false);
+            this->updateLEDs();
+            // Get the binaray representation of the first digit and blink it
+            int targetDigit;
+            delay(msDelay);
+            targetDigit = firstDigit;
+            this->redOn = targetDigit == 0 || targetDigit == 1  || targetDigit == 3 || targetDigit == 5 || targetDigit == 7 || targetDigit == 9;
+            this->yellowOn = targetDigit == 0 || targetDigit == 2  || targetDigit == 3 || targetDigit == 6 || targetDigit == 7;
+            this->blueOn = targetDigit == 0 || targetDigit == 4  || targetDigit == 5 || targetDigit == 6 || targetDigit == 7;
+            this->greenOn = targetDigit == 0 || targetDigit == 8  || targetDigit == 9;
+            this->updateLEDs();
+            delay(msDelay);
+            this->setAll(false);
+            this->updateLEDs();
+            delay(msDelay);
+            // Get the binaray representation of the second digit and blink it
+            targetDigit = secondDigit;
+            this->redOn = targetDigit == 0 || targetDigit == 1  || targetDigit == 3 || targetDigit == 5 || targetDigit == 7 || targetDigit == 9;
+            this->yellowOn = targetDigit == 0 || targetDigit == 2  || targetDigit == 3 || targetDigit == 6 || targetDigit == 7;
+            this->blueOn = targetDigit == 0 || targetDigit == 4  || targetDigit == 5 || targetDigit == 6 || targetDigit == 7;
+            this->greenOn = targetDigit == 0 || targetDigit == 8  || targetDigit == 9;
+            this->updateLEDs();
+            delay(msDelay);
+            // Turn them all off and then restore the previous LED state
+            this->setAll(false);
+            this->updateLEDs();
+            delay(msDelay);
+            this->loadPrevState();
+            this->updateLEDs();
+        }
+
         void cycle(int delaysMS[]) {
             this->saveState();
 
@@ -332,6 +370,10 @@ class HighLowGame {
             this->board->blinkAll(this->current_guesses, onDurationMS, offDurationMS);
         }
 
+        void blinkSecretNumber() {
+            this->board->blinkNumber(this->answer);
+        }
+
         void start() {
             this->board->setAll(false);
             this->board->updateLEDs();
@@ -341,6 +383,7 @@ class HighLowGame {
             this->clearInputBuffer();     // init values and 0 index
                                           // generate and set answer to rand value
             this->answer = generateRandomAnswer(this->answerMin, this->answerMax, this->allowMiddleAnswer);
+            Serial.println(this->answer);
             this->current_guesses = 0;    // init guess counter
             this->additional_guesses = 0; // start game with 0 additional guesses
 
@@ -426,6 +469,7 @@ HighLowGame* game = nullptr;
 void setup() {
     // initialize Serial Connection
     Serial.begin(9600);
+    randomSeed(analogRead(0));
     Serial.println("starting setup...");
 
     // setup LED Pins as output
@@ -505,6 +549,9 @@ void loop() {
                     Serial.print("Guesses Made: ");
                     Serial.println(game->current_guesses);
                     Serial.print("Current Buffer: ");
+                    break;
+                case 'D':
+                    game->blinkSecretNumber();
                     break;
                 case 'C':
                     game->blinkGuesses(550);
