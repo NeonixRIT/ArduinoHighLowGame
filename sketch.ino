@@ -226,38 +226,39 @@ class LEDBoard {
 
         void blinkNumber(int number) {
             int msDelay = 250;
+
             // Get each digit
-            int firstDigit = number / 10;
-            int secondDigit = number % 10;
+            int numberDigits = floor(log10(abs(number))) + 1; // number of base 10 digits
+            int* digits = new int[numberDigits]; // array for each digit
+            int idx = numberDigits - 1; // start at end
+
+            // fill digits array
+            do {
+                digits[idx] = number % 10;
+                number /= 10;
+                idx--;
+            } while (idx >= 0);
+
             // Save the LED State and turn them all off
             this->saveState();
             this->setAll(false);
             this->updateLEDs();
-            // Get the binaray representation of the first digit and blink it
-            int targetDigit;
+            
+            // Do lights
             delay(msDelay);
-            targetDigit = firstDigit;
-            this->redOn = targetDigit == 0 || targetDigit == 1  || targetDigit == 3 || targetDigit == 5 || targetDigit == 7 || targetDigit == 9;
-            this->yellowOn = targetDigit == 0 || targetDigit == 2  || targetDigit == 3 || targetDigit == 6 || targetDigit == 7;
-            this->blueOn = targetDigit == 0 || targetDigit == 4  || targetDigit == 5 || targetDigit == 6 || targetDigit == 7;
-            this->greenOn = targetDigit == 0 || targetDigit == 8  || targetDigit == 9;
-            this->updateLEDs();
-            delay(msDelay);
-            this->setAll(false);
-            this->updateLEDs();
-            delay(msDelay);
-            // Get the binaray representation of the second digit and blink it
-            targetDigit = secondDigit;
-            this->redOn = targetDigit == 0 || targetDigit == 1  || targetDigit == 3 || targetDigit == 5 || targetDigit == 7 || targetDigit == 9;
-            this->yellowOn = targetDigit == 0 || targetDigit == 2  || targetDigit == 3 || targetDigit == 6 || targetDigit == 7;
-            this->blueOn = targetDigit == 0 || targetDigit == 4  || targetDigit == 5 || targetDigit == 6 || targetDigit == 7;
-            this->greenOn = targetDigit == 0 || targetDigit == 8  || targetDigit == 9;
-            this->updateLEDs();
-            delay(msDelay);
-            // Turn them all off and then restore the previous LED state
-            this->setAll(false);
-            this->updateLEDs();
-            delay(msDelay);
+            for (int i = 0; i < numberDigits; i++) {
+                int targetDigit = digits[i];
+                this->redOn = targetDigit == 0 || targetDigit == 1  || targetDigit == 3 || targetDigit == 5 || targetDigit == 7 || targetDigit == 9;
+                this->yellowOn = targetDigit == 0 || targetDigit == 2  || targetDigit == 3 || targetDigit == 6 || targetDigit == 7;
+                this->blueOn = targetDigit == 0 || targetDigit == 4  || targetDigit == 5 || targetDigit == 6 || targetDigit == 7;
+                this->greenOn = targetDigit == 0 || targetDigit == 8  || targetDigit == 9;
+                this->updateLEDs();
+                delay(msDelay);
+                this->setAll(false);
+                this->updateLEDs();
+                delay(msDelay);
+            }
+            // Restore the previous LED state
             this->loadPrevState();
             this->updateLEDs();
         }
@@ -538,7 +539,7 @@ void loop() {
             // "A" key clears current input buffer
             // "#" key submits current input buffer as guess
             // Every other key is added to buffer and sets lights to off
-            // "D" is ignored for now (mapped to null/0 in keypad setup)
+            // "D" blinks answer in base 2
             switch(key) {
                 case '*':
                     Serial.println();
